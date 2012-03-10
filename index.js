@@ -89,7 +89,7 @@ var resolveObjByPath = function (obj, path, callback, upsert) {
  * @name splitPathByDelim
  * @param {String} path Query string.
  * @param {String} delim Delimiter for query string, it will always be this.delim value.
- * @returns {Array|Boolean} Keys/indexes for reaching into the object/array or false if path is an empty string.
+ * @returns {Array} Keys/indexes for reaching into the object/array.
  */
 var splitPathByDelim = function (path, delim) {
     return path && path.split && path.split(delim) || [];
