@@ -1,0 +1,20 @@
+{
+    "name" : "object-resolver",
+    "version" : "0.9",
+    "description" : "Object Resolver class provide easy to use, chaining / asynchronous API (getter, setter)
+                     for operations with complex javascript types (arrays, objects) using simple string dot notation queries.
+                     It use mongodb-style query syntax for reaching into objects and can create undefined properties
+                     and deep structures on the fly",
+    "author" : "Dmitry Poklonskiy <dimik@ya.ru>",
+    "main" : "./index.js",
+    "repository" : {
+        "type" : "git",
+        "url" : "http://github.com/dimik/object-resolver"
+    },
+    "licenses" : [
+        {
+            "type": "AS IS"
+        }
+    ],
+    "engine" : { "node" : ">=0.2.0" }
+}
