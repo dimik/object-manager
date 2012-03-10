@@ -1,10 +1,10 @@
 /**
  * @fileOverview
- * Object Resolver class provide easy to use, chaining / asynchronous API (getter, setter)
+ * Object Resolver class provides easy to use, chaining / asynchronous API (getter, setter)
  * for operations with complex javascript types (arrays, objects) using simple string dot notation queries.
- * It use mongodb-style query syntax for reaching into objects and can create undefined properties
+ * It used mongodb-style query syntax for reaching into objects and can create undefined properties
  * and deep structures on the fly.
- * ObjectResolver designed as a nodejs module, but can be also used in the client side javascript,
+ * ObjectResolver is designed as a nodejs module but can be also used in the client side javascript,
  * with only removing unnecessary "= module.exports" assignment in constructor.
  * @see http://www.mongodb.org/display/DOCS/Dot+Notation+%28Reaching+into+Objects%29
  * @author <a href="mailto:dimik@ya.ru">Dmitry Poklonskiy</a>
@@ -26,6 +26,12 @@
  *     .update("a.b.0.c", 10)
  *     .find("a.b.0"); // [{ c : 10 }]
  */
+
+/**
+ * @constant
+ */
+var GETTER_TYPE_ERROR = "TypeError: Cannot read property '%s' of ",
+    SETTER_TYPE_ERROR = "TypeError: Cannot set property '%s' of ";
 
 /**
  * Create the ObjectResolver instance.
@@ -58,7 +64,7 @@ var resolveObjByPath = function (obj, path, callback, upsert) {
     var err = null,
         key,
         i = 0,
-        len = path.length - 1; // We need last but one field value from query.
+        len = path.length - 1; // We need last but one field value.
 
     for (; i < len; i++) {
         key = path[i];
@@ -74,25 +80,11 @@ var resolveObjByPath = function (obj, path, callback, upsert) {
             }
             obj = obj[key];
         } else {
-            err = "TypeError: Cannot read property '" + key + "' of " + typeof obj;
-            callback(err, false);
-            return;
+            err = GETTER_TYPE_ERROR.replace('%s', key) + typeof obj;
+            break;
         }
     }
-    callback(err, obj);
-};
-
-/**
- * Split query string by delimiter
- * @private
- * @function
- * @name splitPathByDelim
- * @param {String} path Query string.
- * @param {String} delim Delimiter for query string, it will always be this.delim value.
- * @returns {Array} Keys/indexes for reaching into the object/array.
- */
-var splitPathByDelim = function (path, delim) {
-    return path && path.split && path.split(delim) || [];
+    callback(err, !err && obj);
 };
 
 /**
@@ -119,24 +111,25 @@ ptp.resolve = function (ctx) {
  * Getter method of the ObjectResolver.
  * @function
  * @name ObjectResolver.find
- * @param {String} [path] Query string. If not specified or an empty string - return resolved object.
+ * @param {String} [query] Query string. If is not specified or an empty string - return resolved object.
  * @param {Function} [callback] Will be called with 2 params when resolving complete(fail):
  * 1. null or error description string
  * 2. value of the certain object[key] or undefined/false
- * @returns {ObjectResolver|Object} If callback specified return 'this' for chaining calls,
+ * @returns {ObjectResolver|Object} If callback is specified return 'this' for chaining calls,
  * else return resolved value (context object if path is empty string or not specified).
  */
-ptp.find = function (path, callback) {
-    if("function" === typeof path) callback = path, path = false; // Shift params if path not specified.
+ptp.find = function (query, callback) {
+    if("function" === typeof query) callback = query, query = false; // Shift params if path not specified.
 
-    var path = splitPathByDelim(path, this.delim),
-        lastKey = path[path.length - 1],
+    var path = query && query.split(this.delim) || [],
         ctx = this.ctx,
         value;
 
     resolveObjByPath(ctx, path, function (err, obj) {
+        var lastKey = path[path.length - 1];
+
         if(!err && "object" !== typeof obj) {
-            err = "TypeError: Cannot read property '" + lastKey + "' of " + typeof obj;
+            err = GETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
         }
         value = !err && (lastKey ? obj[lastKey] : ctx);
         callback && callback(err, value);
@@ -149,7 +142,7 @@ ptp.find = function (path, callback) {
  * Setter method of the ObjectResolver.
  * @function
  * @name ObjectResolver.update
- * @param {String} path Query string.
+ * @param {String} query Query string.
  * @param value What we want to assign.
  * @param {Function} [callback] Will be called with 2 params when assigning complete(fail):
  * 1. null or error description string
@@ -157,21 +150,22 @@ ptp.find = function (path, callback) {
  * @param {Boolean} [upsert=true] If requested object(s)/array(s) do not exist, insert one.
  * @returns {ObjectResolver} For chaining calls.
  */
-ptp.update = function (path, value, callback, upsert) {
+ptp.update = function (query, value, callback, upsert) {
     if("boolean" === typeof callback) upsert = callback, callback = null; // Shift params if callback not specified.
 
-    var path = splitPathByDelim(path, this.delim),
-        lastKey = path[path.length - 1],
+    var path = query && query.split(this.delim) || [],
         upsert = "boolean" === typeof upsert ? upsert : true, // Upsert is true by default.
         ctx = this.ctx;
 
     resolveObjByPath(ctx, path, function (err, obj) {
+        var lastKey = path[path.length - 1];
+
         if(!err) {
             // Only an object type can be indexed.
             if("object" === typeof obj && lastKey) {
                 obj[lastKey] = value;
             } else {
-                err = "TypeError: Cannot set property '" + lastKey + "' of " + typeof obj;
+                err = SETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
             }
         }
         callback && callback(err, !err && ctx);
