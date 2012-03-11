@@ -122,18 +122,19 @@ ptp.find = function (query, callback) {
     if("function" === typeof query) callback = query, query = false; // Shift params if path not specified.
 
     var path = query && query.split(this.delim) || [],
+        lastKey = path[path.length - 1],
         ctx = this.ctx,
-        value;
+        value,
+        cbk = function (err, obj) {
+            if(!err && "object" !== typeof obj) {
+                err = GETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
+            }
+            value = !err && (lastKey ? obj[lastKey] : ctx);
+            callback && callback(err, value);
+        },
+        resolve = function () { return resolveObjByPath(ctx, path, cbk) };
 
-    resolveObjByPath(ctx, path, function (err, obj) {
-        var lastKey = path[path.length - 1];
-
-        if(!err && "object" !== typeof obj) {
-            err = GETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
-        }
-        value = !err && (lastKey ? obj[lastKey] : ctx);
-        callback && callback(err, value);
-    });
+        callback && setTimeout(resolve, 0) || resolve();
 
     return callback && this || value;
 };
@@ -154,22 +155,23 @@ ptp.update = function (query, value, callback, upsert) {
     if("boolean" === typeof callback) upsert = callback, callback = null; // Shift params if callback not specified.
 
     var path = query && query.split(this.delim) || [],
+        lastKey = path[path.length - 1],
         upsert = "boolean" === typeof upsert ? upsert : true, // Upsert is true by default.
-        ctx = this.ctx;
-
-    resolveObjByPath(ctx, path, function (err, obj) {
-        var lastKey = path[path.length - 1];
-
-        if(!err) {
-            // Only an object type can be indexed.
-            if("object" === typeof obj && lastKey) {
-                obj[lastKey] = value;
-            } else {
-                err = SETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
+        ctx = this.ctx,
+        cbk = function (err, obj) {
+            if(!err) {
+                // Only an object type can be indexed.
+                if("object" === typeof obj && lastKey) {
+                    obj[lastKey] = value;
+                } else {
+                    err = SETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
+                }
             }
-        }
-        callback && callback(err, !err && ctx);
-    }, upsert);
+            callback && callback(err, !err && ctx);
+        },
+        resolve = function () { return resolveObjByPath(ctx, path, cbk, upsert) };
+
+        callback && setTimeout(resolve, 0) || resolve();
 
     return this;
 };
