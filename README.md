@@ -1,8 +1,8 @@
 Object Resolver
 ============
 
-    Object Resolver is a nodejs module for dealing with javascript Object/Array data types,
-    reaching into objects and generate a deep structure of the object with simple MongoDB-style query strings.
+Object Resolver is a nodejs module for dealing with javascript Object/Array data types,
+reaching into objects and generate a deep structure of the object with simple MongoDB-style query strings.
 
 Installing
 ------------
