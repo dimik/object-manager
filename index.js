@@ -1,11 +1,12 @@
 /**
  * @fileOverview
- * Object Resolver class provides easy to use, chaining / asynchronous API (getter, setter)
+ * Object Resolver class provides easy to use, chaining / callback API (getter, setter)
  * for operations with complex javascript types (arrays, objects) using simple string dot notation queries.
  * It used mongodb-style query syntax for reaching into objects and can create undefined properties
  * and deep structures on the fly.
  * ObjectResolver is designed as a nodejs module but can be also used in the client side javascript,
  * with only removing unnecessary "= module.exports" assignment in constructor.
+ * Note: For async callbacks support please checkout 'async' branch.
  * @see http://www.mongodb.org/display/DOCS/Dot+Notation+%28Reaching+into+Objects%29
  * @author <a href="mailto:dimik@ya.ru">Dmitry Poklonskiy</a>
  * @version 0.9
@@ -14,14 +15,14 @@
  * exampleObject = {},
  * resolver = new ObjectResolver();
  *
- * // async call
+ * // call with callback (errors handling)
  * resolver.resolve(exampleObject)
  *     .update("a.b.0.c", 10, function (err, obj) {
  *         console.log(err); // null or string with error description "TypeError: cannot set property 'undefined' of number"
  *         console.log(obj); // updated object { a : { b : [{ c : 10 }] } }
  *     });
  *
- * // sync chained call
+ * // chaining call
  * var result = resolver.resolve(exampleObject)
  *     .update("a.b.0.c", 10)
  *     .find("a.b.0"); // [{ c : 10 }]
