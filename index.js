@@ -54,14 +54,14 @@ var ObjectResolver = module.exports = function (delim) {
  * Resolve query through context object.
  * @private
  * @function
- * @name resolveObjByPath
+ * @name resolver
  * @param {Object|Array} obj Object which we want to resolve, it will always be this.ctx value.
  * @param {String[]} path Keys/indexes from query.
  * @param {Function} callback Will be called on resolving complete(fail).
  * @param {Boolean} upsert If requested object(s)/array(s) do not exist, insert one.
  * @returns {Object|Array} Link on the last but one object in query path.
  */
-var resolveObjByPath = function (obj, path, callback, upsert) {
+var resolver = function (obj, path, callback, upsert) {
     var err = null,
         key,
         i = 0,
@@ -120,19 +120,18 @@ ptp.resolve = function (ctx) {
  * else return resolved value (context object if path is empty string or not specified).
  */
 ptp.find = function (query, callback) {
-    if("function" === typeof query) callback = query, query = false; // Shift params if path not specified.
+    "function" === typeof query && (callback = query, query = false); // Shift params if path not specified.
 
     var path = query && query.split(this.delim) || [],
         ctx = this.ctx,
         value;
 
-    resolveObjByPath(ctx, path, function (err, obj) {
+    resolver(ctx, path, function (err, obj) {
         var lastKey = path[path.length - 1];
 
-        if(!err && "object" !== typeof obj) {
-            err = GETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
-        }
-        value = !err && (lastKey ? obj[lastKey] : ctx);
+        "object" === typeof obj ? (value = lastKey ? obj[lastKey] : ctx) :
+            (err = err || GETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj);
+
         callback && callback(err, value);
     });
 
@@ -152,13 +151,13 @@ ptp.find = function (query, callback) {
  * @returns {ObjectResolver} For chaining calls.
  */
 ptp.update = function (query, value, callback, upsert) {
-    if("boolean" === typeof callback) upsert = callback, callback = null; // Shift params if callback not specified.
+    ("boolean" === typeof callback) upsert = callback, callback = null; // Shift params if callback not specified.
 
     var path = query && query.split(this.delim) || [],
         upsert = "boolean" === typeof upsert ? upsert : true, // Upsert is true by default.
         ctx = this.ctx;
 
-    resolveObjByPath(ctx, path, function (err, obj) {
+    resolver(ctx, path, function (err, obj) {
         var lastKey = path[path.length - 1];
 
         if(!err) {
