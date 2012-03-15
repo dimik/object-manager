@@ -11,7 +11,7 @@
  * @author <a href="mailto:dimik@ya.ru">Dmitry Poklonskiy</a>
  * @version 0.9
  * @example
- * var ObjectResolver = require("./object-resolver"),
+ * var ObjectResolver = require("object-resolver"),
  * exampleObject = {},
  * resolver = new ObjectResolver();
  *
@@ -57,17 +57,15 @@ var ObjectResolver = module.exports = function (delim) {
  * @name resolver
  * @param {Object|Array} obj Object which we want to resolve, it will always be this.ctx value.
  * @param {String[]} path Keys/indexes from query.
+ * @param {Number} depth How deep does we go.
  * @param {Function} callback Will be called on resolving complete(fail).
  * @param {Boolean} upsert If requested object(s)/array(s) do not exist, insert one.
  * @returns {Object|Array} Link on the last but one object in query path.
  */
-var resolver = function (obj, path, callback, upsert) {
-    var err = null,
-        key,
-        i = 0,
-        len = path.length - 1; // We need last but one field value.
+var resolver = function (obj, path, depth, callback, upsert) {
+    var err = null, i, key;
 
-    for (; i < len; i++) {
+    for (i = 0; i < depth; i++) {
         key = path[i];
 
         if("object" === typeof obj) {
@@ -123,14 +121,14 @@ ptp.find = function (query, callback) {
     "function" === typeof query && (callback = query, query = false); // Shift params if path not specified.
 
     var path = query && query.split(this.delim) || [],
+        depth = path.length - 1,
+        lastKey = path[depth],
         ctx = this.ctx,
         value;
 
-    resolver(ctx, path, function (err, obj) {
-        var lastKey = path[path.length - 1];
-
+    resolver(ctx, path, depth, function (err, obj) {
         "object" === typeof obj ? (value = lastKey ? obj[lastKey] : ctx) :
-            (err = err || GETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj);
+            err = err || GETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
 
         callback && callback(err, value);
     });
@@ -151,23 +149,18 @@ ptp.find = function (query, callback) {
  * @returns {ObjectResolver} For chaining calls.
  */
 ptp.update = function (query, value, callback, upsert) {
-    ("boolean" === typeof callback) upsert = callback, callback = null; // Shift params if callback not specified.
+    "boolean" === typeof callback && (upsert = callback, callback = null); // Shift params if callback not specified.
 
     var path = query && query.split(this.delim) || [],
-        upsert = "boolean" === typeof upsert ? upsert : true, // Upsert is true by default.
+        depth = path.length - 1,
+        lastKey = path[depth],
+        upsert = "boolean" === typeof upsert ? upsert : true,
         ctx = this.ctx;
 
-    resolver(ctx, path, function (err, obj) {
-        var lastKey = path[path.length - 1];
+    resolver(ctx, path, depth, function (err, obj) {
+        "object" === typeof obj && lastKey ? obj[lastKey] = value :
+            err = err || SETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
 
-        if(!err) {
-            // Only an object type can be indexed.
-            if("object" === typeof obj && lastKey) {
-                obj[lastKey] = value;
-            } else {
-                err = SETTER_TYPE_ERROR.replace('%s', lastKey) + typeof obj;
-            }
-        }
         callback && callback(err, !err && ctx);
     }, upsert);
 
