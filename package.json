@@ -3,7 +3,7 @@
     "version" : "0.9",
     "description" : "Easy to use, chaining / asynchronous API (getter, setter) for operations with complex javascript types (arrays, object)",
     "author" : "Dmitry Poklonskiy <dimik@ya.ru>",
-    "main" : "./index",
+    "main" : "index",
     "repository" : {
         "type" : "git",
         "url" : "http://github.com/dimik/object-resolver"
