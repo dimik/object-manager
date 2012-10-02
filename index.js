@@ -1,1 +1,1 @@
-module.exports = require('./lib/object-resolver');
+module.exports = require('./lib/object-manager');

@@ -1,39 +1,34 @@
-Object Resolver
+Object Manager
 ============
 
-Object Resolver is a nodejs module for dealing with javascript Object/Array data types,
+Object Manager is a nodejs module for dealing with javascript Object/Array data types,
 reaching into objects and generate a deep structure of the objects using simple MongoDB-style queries.
-
-Installing
-------------
-    $ npm install object-resolver
 
 Description
 ------------
-Object Resolver class provides easy to use, chaining/callback API (getter, setter)
+Object Manager class provides easy to use, chaining/callback API (getter, setter)
 for operations with complex javascript types (arrays, objects) using simple string dot notation queries.
 It used [MongoDB-style](http://www.mongodb.org/display/DOCS/Dot+Notation+%29Reaching+into+Objects%29) query syntax for reaching into objects and can create undefined properties
 and deep structures on the fly.
-ObjectResolver is designed as a nodejs module but can be also used in the client side javascript,
+ObjectManager is designed as a nodejs module but can be also used in the client side javascript,
 with only removing unnecessary "= module.exports" assignment in constructor.
 Note: For async callbacks support please checkout 'async' branch.
 
 Example
 ------------
 ```javascript
-var ObjectResolver = require("./object-resolver"),
-exampleObject = {},
-resolver = new ObjectResolver();
+var ObjectManager = require("./object-manager"),
+    manager = new ObjectManager({a : {}});
 
 // call with callback (error handling)
-resolver.resolve(exampleObject)
+manager
     .update("a.b.0.c", 10, function (err, obj) {
         console.log(err); // null or string with error description "TypeError: cannot set property 'undefined' of number"
         console.log(obj); // updated object { a : { b : [{ c : 10 }] } }
     });
 
 // chaining call
-var result = resolver.resolve(exampleObject)
+var result = manager
     .update("a.b.0.c", 10)
     .find("a.b.0"); // [{ c : 10 }]
 ```
